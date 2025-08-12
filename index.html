@@ -10,6 +10,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <!-- CSS file -->
 <link rel="stylesheet" href="style.css">
+<link rel="manifest" href="manifest.json" />
+
 
 <!-- html2canvas & jsPDF libraries -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
@@ -90,6 +92,15 @@
 
   <div class="footer">Thank you for your business!</div>
 </div>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js')
+        .then(reg => console.log('Service Worker registered', reg))
+        .catch(err => console.error('Service Worker failed', err));
+    });
+  }
+</script>
 
 </body>
 </html>
