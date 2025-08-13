@@ -7,17 +7,6 @@ if ('serviceWorker' in navigator) {
 
 const lastValid = new WeakMap();
 
-function capitalizeFirstLetter(input) {
-  const val = input.value.trim();
-  if (val.length) {
-    input.value = val.charAt(0).toUpperCase() + val.slice(1);
-  }
-}
-
-function capitalizeCustomerName() {
-  capitalizeFirstLetter(document.getElementById('customerName'));
-}
-
 function addItem() {
   const itemsDiv = document.getElementById('items');
   const div = document.createElement('div');
@@ -70,11 +59,9 @@ function attachListeners(row) {
         }
         updatePreview();
       });
-    }
-    if (input.classList.contains('item-name')) {
+    } else if (input.classList.contains('item-name')) {
       input.addEventListener('input', () => {
-        capitalizeFirstLetter(input);
-        updatePreview();
+        updatePreview(); // Allow spaces exactly as typed
       });
     }
   });
@@ -85,9 +72,9 @@ function isValidPositiveInt(v) {
 }
 
 function updatePreview() {
-  capitalizeCustomerName();
-  const name = document.getElementById('customerName').value.trim();
-  const phone = document.getElementById('customerPhone').value.trim();
+  const name = document.getElementById('customerName').value; // no trim
+  const phone = document.getElementById('customerPhone').value; // no trim
+
   document.getElementById('billTo').textContent =
     name ? `Bill To: ${name}${phone ? ' ('+phone+')' : ''}` : '';
   document.getElementById('billDate').textContent =
@@ -99,8 +86,8 @@ function updatePreview() {
 
   document.querySelectorAll('#items .item-row').forEach(row => {
     const type = row.dataset.type;
-    const desc = row.querySelector('.item-name').value.trim();
-    
+    const desc = row.querySelector('.item-name').value; // no trim
+
     if (!desc) return;
 
     if (type==='item') {
@@ -114,7 +101,7 @@ function updatePreview() {
       }
       tbody.insertAdjacentHTML('beforeend', `
         <tr>
-          <td>${desc}</td>
+          <td style="white-space: pre;">${desc}</td>
           <td>${qv?q:''}</td>
           <td>${rv?r:''}</td>
           <td>${amt!==''?amt:''}</td>
@@ -126,7 +113,7 @@ function updatePreview() {
       if (pv) subtotal += parseInt(p);
       tbody.insertAdjacentHTML('beforeend', `
         <tr>
-          <td>${desc}</td>
+          <td style="white-space: pre;">${desc}</td>
           <td>NA</td>
           <td>NA</td>
           <td>${pv?p:''}</td>
@@ -166,7 +153,7 @@ function generatePDF() {
   updatePreview();
   
   const missingDesc = Array.from(document.querySelectorAll('#items .item-row[data-type="item"] .item-name'))
-    .some(input => input.value.trim() === '');
+    .some(input => input.value === '');
   
   if (missingDesc) {
     alert('Please fill all item descriptions before generating the bill.');
@@ -179,7 +166,7 @@ function generatePDF() {
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF('p','mm','a4');
     const w = pdf.internal.pageSize.getWidth(), h = pdf.internal.pageSize.getHeight();
-    const pxToMm=0.264583, margin=5;
+    const pxToMm = 0.264583, margin=5;
     const imgW = w - margin*2;
     const imgH = (canvas.height*pxToMm)*(imgW/(canvas.width*pxToMm));
     if (imgH < h - margin*2) {
@@ -202,24 +189,17 @@ function generatePDF() {
       }
     }
     
-    let custName = document.getElementById('customerName').value.trim();
+    let custName = document.getElementById('customerName').value;
     custName = custName ? custName.replace(/\s+/g,'_') : 'ROSERVICE_BILL';
     pdf.save(`${custName}.pdf`);
   });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Initial attach listeners for existing rows
   document.querySelectorAll('#items .item-row').forEach(attachListeners);
-  // Attach listener to customer name input for capitalization
-  document.getElementById('customerName').addEventListener('input', capitalizeCustomerName);
-  // Update preview initially
-  updatePreview();
-
-  // Attach listeners to discount inputs to update preview on change
+  document.getElementById('customerName').addEventListener('input', updatePreview);
   document.getElementById('discountValue').addEventListener('input', updatePreview);
   document.getElementById('discountType').addEventListener('change', updatePreview);
-
-  // Attach listeners to customer phone (optional)
   document.getElementById('customerPhone').addEventListener('input', updatePreview);
+  updatePreview();
 });
